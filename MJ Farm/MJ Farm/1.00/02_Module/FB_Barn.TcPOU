@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Barn" Id="{cf9725ae-d3e0-4439-8c00-4d7018d0d139}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Barn EXTENDS FB_Station
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="AutoImport" Id="{efad2820-81ad-4919-9d7c-23f161d21edd}">
+      <Declaration><![CDATA[METHOD AutoImport : PVOID
+VAR_INPUT
+	Egg			: INT;
+	Chicken		: INT;
+END_VAR
+VAR
+	stTempEgg			: ST_Unit;
+	iTempEgg			: INT;
+	stTempChicken		: ST_Unit;
+	iTempChicken		: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR iTempEgg := 1 TO Egg BY 1 DO
+	stTempEgg.eType := 0;
+	stTempEgg.iHitPoint := 30;
+	stTempEgg.iProgress := 0;
+	UnitImport(stTempEgg);
+END_FOR
+
+FOR iTempChicken := 1 TO Chicken BY 1 DO
+	stTempChicken.eType := 1;
+	stTempChicken.iHitPoint := 30;
+	stTempChicken.iProgress := 0;
+	UnitImport(stTempChicken);
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Run" Id="{933056ec-e406-414c-8d4f-50f2eea35eb3}">
+      <Declaration><![CDATA[METHOD Run : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[iMaxUnit := iCurLevel * 20;
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Barn">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Barn.AutoImport">
+      <LineId Id="70" Count="11" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Barn.Run">
+      <LineId Id="6" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,512 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Game" Id="{22c561c3-77d7-46af-864d-7fd449769992}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Game
+VAR
+(*===========================================================================================================================*)
+	(*Buttons*)
+		(*Transfer*)
+	btBarnToBreeder			: BOOL;
+	btBarnToIncubator		: BOOL;
+	btSellEgg				: BOOL;
+	btSellChicken			: BOOL;
+	btBreederToBarn			: BOOL;
+	btPurchaseEgg			: BOOL;
+	btPurchaseChicken		: BOOL;
+		(*Upgrades*)
+	btUpgradeArm			: BOOL;
+	btUpgradeBarn			: BOOL;
+	btUpgradeBreeder		: BOOL;
+	btUpgradeIncubator		: BOOL;
+	btUpgradeMarket			: BOOL;
+	(*/Buttons*)
+(*===========================================================================================================================*)
+	(*Instance*)
+		(*Stations*)
+	fbBarn					: FB_Barn;
+	fbBreeder				: FB_Breeder;
+	fbIncubator				: FB_Incubator;
+	fbMarket				: FB_Market;
+		(*Arms*)
+	fbArmArr				: ARRAY [1..5] OF FB_Arm;
+	iCurArmLevel			: INT;
+	iMaxArmLevel			: INT;
+		(*Status*)
+	iDay					: INT;
+	iHour					: INT;
+	iCurrency				: INT;
+	iCost					: INT;
+	iBarnUnit				: INT;
+	iBreederUnit			: INT;
+	iIncubatorUnit			: INT;
+	iMarketUnit				: INT;
+		(*Game Setting*)
+	MaxStationLevel			: INT	:= 5;
+	BarnLocation			: REAL	:= 10;
+	BreederLocation			: REAL	:= 50;
+	IncubatorLocation		: REAL	:= 90;
+	MarketLocation			: REAL	:= 130;
+	InitArmX				: REAL	:= 0;
+	InitArmY				: REAL	:= 0;
+	
+		(*Timer*)
+	fbTon60FPS				: TON;
+	fbTon30FPS				: TON;
+	fbTon1S					: TON;
+	(*/Instance*)
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Initialize(MaxStationLevel, BarnLocation, BreederLocation, IncubatorLocation, MarketLocation, 100);
+
+fbTon30FPS(IN:= TRUE, PT:= T#33MS);
+IF fbTon30FPS.Q THEN
+	fbTon30FPS(IN:= FALSE);
+	
+	fbBarn.SortDescending();
+	fbBreeder.SortAscending();
+	fbIncubator.SortAscending();
+	
+	ButtonsTransfer();
+	ArmRun();
+	
+	iBarnUnit := fbBarn.TotalUnit;
+	iBreederUnit := fbBreeder.TotalUnit;
+	iIncubatorUnit := fbIncubator.TotalUnit;
+	iMarketUnit := fbMarket.TotalUnit;
+	
+END_IF
+
+fbTon1S(IN:= TRUE, PT:= T#1S);
+IF fbTon1S.Q THEN
+	fbTon1S(IN:= FALSE);
+	
+	fbBarn.Run();
+	fbBarn.HpRecover();
+	
+	fbBreeder.Run();
+	fbBreeder.HpDeduct();
+	
+	fbIncubator.Run();
+	
+	fbMarket.Run();
+	
+	fbBarn.AutoImport(fbBreeder.Breeding(), fbIncubator.Hatching());
+	iCurrency := iCurrency + fbMarket.Marketing();
+	
+	iHour := iHour + 1;
+END_IF
+
+IF iHour > 23 THEN
+	iHour := 0;
+	iDay := iDay + 1;
+	iCurrency := iCurrency - iCost;
+	IF iCurrency >= 0 THEN
+		iCost := iCost + iDay*10;
+	ELSE
+		// Lose
+	END_IF
+	
+END_IF
+
+IF iDay > 30 THEN
+	// Win
+END_IF]]></ST>
+    </Implementation>
+    <Method Name="ArmRun" Id="{f031ee30-bad9-4da1-9df3-5f259cfd8b13}">
+      <Declaration><![CDATA[METHOD ArmRun : PVOID
+VAR
+	iIndex			: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbArmArr[1].Run();
+fbArmArr[2].Run();
+fbArmArr[3].Run();
+fbArmArr[4].Run();
+fbArmArr[5].Run();
+
+FOR iIndex := 1 TO iCurArmLevel BY 1 DO
+	IF fbArmArr[iIndex].Load THEN
+		IF
+			fbArmArr[iIndex].CurX = fbBarn.Location THEN
+			IF
+				fbArmArr[iIndex].UnitType = 0 THEN
+				fbArmArr[iIndex].CurUnit := fbBarn.UnitExport(0);
+				fbArmArr[iIndex].Load := FALSE;
+			ELSIF
+				fbArmArr[iIndex].UnitType = 1 THEN
+				fbArmArr[iIndex].CurUnit := fbBarn.UnitExport(1);
+				fbArmArr[iIndex].Load := FALSE;
+			END_IF
+		ELSIF
+			fbArmArr[iIndex].CurX = fbBreeder.Location THEN
+			IF
+				fbArmArr[iIndex].UnitType = 1 THEN
+				fbArmArr[iIndex].CurUnit := fbBreeder.UnitExport(1);
+				fbArmArr[iIndex].Load := FALSE;
+			END_IF
+		END_IF
+	END_IF
+END_FOR
+
+FOR iIndex := 1 TO iCurArmLevel BY 1 DO
+	IF fbArmArr[iIndex].Unload THEN
+		IF
+			fbArmArr[iIndex].CurX = fbBarn.Location THEN
+			fbBarn.UnitImport(fbArmArr[iIndex].CurUnit);
+			fbArmArr[iIndex].Unload := FALSE;
+		ELSIF
+			fbArmArr[iIndex].CurX = fbBreeder.Location THEN
+			fbBreeder.UnitImport(fbArmArr[iIndex].CurUnit);
+			fbArmArr[iIndex].Unload := FALSE;
+		ELSIF
+			fbArmArr[iIndex].CurX = fbIncubator.Location THEN
+			fbIncubator.UnitImport(fbArmArr[iIndex].CurUnit);
+			fbArmArr[iIndex].Unload := FALSE;
+		ELSIF
+			fbArmArr[iIndex].CurX = fbMarket.Location THEN
+			fbMarket.UnitImport(fbArmArr[iIndex].CurUnit);
+			fbArmArr[iIndex].Unload := FALSE;
+		END_IF
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ButtonsTransfer" Id="{d324891f-eccd-4b74-ae1e-f2f01dcb2a2e}">
+      <Declaration><![CDATA[METHOD ButtonsTransfer : PVOID
+VAR
+	stTempUnit			: ST_Unit;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF btBarnToBreeder THEN
+	btBarnToBreeder := NOT btBarnToBreeder;
+	
+	IF NOT fbBreeder.IsFull AND fbBarn.HasChicken THEN
+		TransferUnit(fbBarn.Location, fbBreeder.Location, 1);
+	END_IF
+END_IF
+
+IF btBarnToIncubator THEN
+	btBarnToIncubator := NOT btBarnToIncubator;
+	
+	IF NOT fbIncubator.IsFull AND fbBarn.HasEgg  THEN
+		TransferUnit(fbBarn.Location, fbIncubator.Location, 0);
+	END_IF
+END_IF
+
+IF btSellEgg THEN
+	btSellEgg := NOT btSellEgg;
+	
+	IF NOT fbMarket.IsFull AND fbBarn.HasEgg THEN
+		TransferUnit(fbBarn.Location, fbMarket.Location, 0);
+	END_IF	
+END_IF
+
+IF btSellChicken THEN
+	btSellChicken := NOT btSellChicken;
+	
+	IF NOT fbMarket.IsFull AND fbBarn.HasChicken THEN
+		TransferUnit(fbBarn.Location, fbMarket.Location, 1);
+	END_IF	
+END_IF
+
+IF btBreederToBarn THEN
+	btBreederToBarn := NOT btBreederToBarn;
+	
+	IF NOT fbBarn.IsFull AND fbBreeder.HasChicken THEN
+		TransferUnit(fbBreeder.Location, fbBarn.Location, 1);
+	END_IF
+END_IF
+
+IF btPurchaseEgg THEN
+	btPurchaseEgg := NOT btPurchaseEgg;
+	
+	IF NOT fbBarn.IsFull AND iCurrency > 20 THEN
+		iCurrency := iCurrency - 20;
+		
+		stTempUnit.eType := 0;
+		stTempUnit.iHitPoint := 30;
+		stTempUnit.iProgress := 0;
+		fbBarn.UnitImport(stTempUnit);
+	END_IF
+END_IF
+
+IF btPurchaseChicken THEN
+	btPurchaseChicken := NOT btPurchaseChicken;
+	
+	IF  NOT fbBarn.IsFull AND iCurrency > 12 THEN
+		iCurrency := iCurrency - 12;
+		
+		stTempUnit.eType := 1;
+		stTempUnit.iHitPoint := 30;
+		stTempUnit.iProgress := 0;
+		fbBarn.UnitImport(stTempUnit);
+	END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ButtonsUpgrade" Id="{7a678470-b127-44a2-b241-e37cc47f5691}">
+      <Declaration><![CDATA[METHOD ButtonsUpgrade : PVOID
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF btUpgradeArm THEN
+	btUpgradeArm := NOT btUpgradeArm;
+	
+	IF iCurrency > (iCurArmLevel*30) THEN
+		iCurrency := iCurrency - (iCurArmLevel*30);
+		UpgradeArm(iCurArmLevel, InitArmX, InitArmY);
+	END_IF
+END_IF
+
+IF btUpgradeBarn THEN
+	btUpgradeBarn := NOT btUpgradeBarn;
+	
+	IF iCurrency > (fbBarn.Level*30) THEN
+		iCurrency := iCurrency - (fbBarn.Level*30);
+		fbBarn.Upgrade();
+	END_IF
+END_IF
+
+IF btUpgradeBreeder THEN
+	btUpgradeBreeder := NOT btUpgradeBreeder;
+	
+	IF iCurrency > (fbBreeder.Level*30) THEN
+		iCurrency := iCurrency - (fbBreeder.Level*30);
+		fbBreeder.Upgrade();
+	END_IF
+END_IF
+
+IF btUpgradeIncubator THEN
+	btUpgradeIncubator := NOT btUpgradeIncubator;
+	
+	IF iCurrency > (fbIncubator.Level*30) THEN
+		iCurrency := iCurrency - (fbIncubator.Level*30);
+		fbIncubator.Upgrade();
+	END_IF
+END_IF
+
+IF btUpgradeMarket THEN
+	btUpgradeMarket := NOT btUpgradeMarket;
+	
+	IF iCurrency > (fbMarket.Level*30) THEN
+		iCurrency := iCurrency - (fbMarket.Level*30);
+		fbMarket.Upgrade();
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Initialize" Id="{e453e12e-9e44-402a-9a88-b06e54fad43f}">
+      <Declaration><![CDATA[METHOD Initialize : PVOID
+VAR_INPUT
+	MaxLevel					: INT;
+	BarnLocation				: REAL;
+	BreederLocation				: REAL;
+	IncubatorLocation			: REAL;
+	MarketLocation				: REAL;
+	Currency					: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iDay = 0 THEN
+	iDay := 1;
+	
+	fbBarn.Set(MaxLevel, BarnLocation);
+	fbBreeder.Set(MaxLevel, BreederLocation);
+	fbIncubator.Set(MaxLevel, IncubatorLocation);
+	fbMarket.Set(MaxLevel, MarketLocation);
+	UpgradeArm(iCurArmLevel, InitArmX, InitArmY);
+	
+	iCurrency := Currency;
+	iCost := 10;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TransferUnit" Id="{b8bed2d0-b13c-4665-9ae5-ca938bed5f40}">
+      <Declaration><![CDATA[METHOD TransferUnit : PVOID
+VAR_INPUT
+	ImportLocation			: REAL;
+	ExportLocation			: REAL;
+	UnitType				: INT;	//0: Egg, 1: Chicken
+END_VAR
+VAR
+	iIndex					: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR iIndex := 1 TO iCurArmLevel BY 1 DO
+	IF fbArmArr[iIndex].Activated AND NOT fbArmArr[iIndex].Busy THEN
+		fbArmArr[iIndex].Assign(ImportLocation, ExportLocation, UnitType);
+		RETURN;
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UpgradeArm" Id="{e1b1be22-b1b9-4216-b553-534359291a7a}">
+      <Declaration><![CDATA[METHOD UpgradeArm : PVOID
+VAR_INPUT
+	CurrentArmIndex		: INT;
+	InitX				: REAL;
+	InitY				: REAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CurrentArmIndex := CurrentArmIndex + 1;
+fbArmArr[CurrentArmIndex].Activated := TRUE;
+fbArmArr[CurrentArmIndex].CurX := InitX;
+fbArmArr[CurrentArmIndex].CurX := InitY;
+iCurArmLevel := CurrentArmIndex;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Game">
+      <LineId Id="353" Count="0" />
+      <LineId Id="356" Count="11" />
+      <LineId Id="515" Count="2" />
+      <LineId Id="514" Count="0" />
+      <LineId Id="518" Count="0" />
+      <LineId Id="368" Count="24" />
+      <LineId Id="451" Count="2" />
+      <LineId Id="455" Count="1" />
+      <LineId Id="454" Count="0" />
+      <LineId Id="450" Count="0" />
+      <LineId Id="393" Count="3" />
+      <LineId Id="293" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.ArmRun">
+      <LineId Id="5" Count="4" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="49" Count="3" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="70" Count="2" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="102" Count="1" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="104" Count="1" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="66" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.ButtonsTransfer">
+      <LineId Id="5" Count="1" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="58" Count="2" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="11" Count="3" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="66" Count="1" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="23" Count="3" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="74" Count="1" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="92" Count="1" />
+      <LineId Id="85" Count="2" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="45" Count="3" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="94" Count="1" />
+      <LineId Id="89" Count="2" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="53" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.ButtonsUpgrade">
+      <LineId Id="5" Count="1" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="46" Count="2" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="23" Count="2" />
+      <LineId Id="50" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="28" Count="2" />
+      <LineId Id="55" Count="2" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="33" Count="2" />
+      <LineId Id="60" Count="2" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="32" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.Initialize">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="42" Count="1" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="54" Count="2" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.TransferUnit">
+      <LineId Id="12" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Game.UpgradeArm">
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="10" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

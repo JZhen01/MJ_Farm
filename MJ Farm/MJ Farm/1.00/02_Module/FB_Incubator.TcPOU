@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Incubator" Id="{4bbf2477-6dce-43b6-9a38-1df9d00436a5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Incubator EXTENDS FB_Station
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Hatching" Id="{20cf3caf-be4c-44da-932d-f076630515bb}">
+      <Declaration><![CDATA[METHOD Hatching : INT
+VAR
+	stTempUnit				: ST_Unit;
+	iTempIndex				: INT;
+	iHatchCounter			: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Hatching := 0;
+IF iLastIndex > 0 THEN
+	FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+		stTempUnit := stUnitArr[iTempIndex];
+		IF stTempUnit.iProgress < 6 THEN
+			stTempUnit.iProgress := stTempUnit.iProgress + 1;
+			stUnitArr[iTempIndex] := stTempUnit;
+		ELSE
+			RemoveUnit(iTempIndex);
+			iHatchCounter := iHatchCounter + 1;
+		END_IF
+	END_FOR
+END_IF
+Hatching := iHatchCounter;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Incubator">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Incubator.Hatching">
+      <LineId Id="6" Count="3" />
+      <LineId Id="64" Count="1" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

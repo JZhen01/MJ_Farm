@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Breeder" Id="{f42eb3d6-1236-45b8-ba11-23c59e597994}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Breeder EXTENDS FB_Station
+VAR
+	iBreedableArr			: ARRAY [1..50] OF INT;
+	iLastBreedIndex			: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Breeding" Id="{e3a38cc5-d3c4-4a1d-8c2b-e478c877839a}">
+      <Declaration><![CDATA[METHOD Breeding : INT
+VAR
+	stTempUnit				: ST_Unit;
+	iTempIndex				: INT;
+	iBreedIndex				: INT;
+	iBreedCounter			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Breeding := 0;
+IF iLastIndex > 1 THEN
+	FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+		stTempUnit := stUnitArr[iTempIndex];
+		IF stTempUnit.iProgress < 6 THEN
+			stTempUnit.iProgress := stTempUnit.iProgress + 1;
+			stUnitArr[iTempIndex] := stTempUnit;
+		ELSE
+			iBreedIndex := iBreedIndex + 1;
+			iBreedableArr[iBreedIndex] := iTempIndex;
+			iLastBreedIndex := iBreedIndex;
+		END_IF
+	END_FOR
+END_IF
+
+IF iLastBreedIndex > 1 THEN
+	FOR iBreedIndex := 1 TO iLastBreedIndex BY 1 DO
+		stTempUnit := stUnitArr[iBreedableArr[iBreedIndex]];
+		stTempUnit.iProgress := 0;
+		stUnitArr[iBreedableArr[iBreedIndex]] := stTempUnit;
+		iBreedCounter := iBreedCounter + 1;
+	END_FOR
+	iLastBreedIndex := 0;
+	Breeding := iBreedCounter / 2;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Breeder">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Breeder.Breeding">
+      <LineId Id="226" Count="0" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="204" Count="0" />
+      <LineId Id="210" Count="1" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="235" Count="2" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="241" Count="1" />
+      <LineId Id="220" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

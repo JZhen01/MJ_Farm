@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_Unit" Id="{0d188936-f511-4ca0-9933-7f2e66843d42}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_Unit :
+(
+	Invalid := -1,
+	Egg		:= 0,
+	Chicken	:= 1
+):= Invalid;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Market" Id="{b4d1e01c-c244-4b7b-bec0-15476fe266bd}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Market EXTENDS FB_Station
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Marketing" Id="{69fe06ce-d9d3-4452-bfe5-9712f83a336b}">
+      <Declaration><![CDATA[METHOD Marketing : INT
+VAR
+	stTempUnit				: ST_Unit;
+	iTempIndex				: INT;
+	iSold					: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Marketing := 0;
+IF iLastIndex > 0 THEN
+	FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+		stTempUnit := stUnitArr[iTempIndex];
+		IF stTempUnit.iProgress < 6 THEN
+			stTempUnit.iProgress := stTempUnit.iProgress + 1;
+			stUnitArr[iTempIndex] := stTempUnit;
+		ELSE
+			IF stTempUnit.eType = 0 THEN
+				Marketing := Marketing + 8;
+			ELSIF 
+				stTempUnit.eType = 1 THEN
+				Marketing := Marketing + 15;
+			END_IF
+			RemoveUnit(iTempIndex);
+		END_IF
+	END_FOR
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Market">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Market.Marketing">
+      <LineId Id="10" Count="7" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="26" Count="2" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="20" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

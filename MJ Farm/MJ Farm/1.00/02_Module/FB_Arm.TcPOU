@@ -1,0 +1,391 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Arm" Id="{75e5cc7f-f676-4e64-a36d-5261779273ee}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Arm
+VAR
+	bActivated			: BOOL;
+	bBusy				: BOOL;
+	bRunning			: BOOL;
+	bLoad				: BOOL;
+	bUnload				: BOOL;
+	
+	rCurX				: REAL;
+	rCurY				: REAL;
+	
+	rImportX			: REAL;
+	rExportX			: REAL;
+	rLoadingY			: REAL	:= 0;
+	
+	rIdleX				: REAL	:= 0;
+	rIdleY				: REAL	:= 10;
+	
+	stUnit				: ST_Unit;
+	
+	iType				: INT;
+	iCase				: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="Properties" Id="{25cccf8b-0fa1-49ed-8a26-204ec71a3376}" />
+    <Property Name="Activated" Id="{b0b6577a-e8c5-4910-a542-0354fbd42b1b}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Activated : BOOL]]></Declaration>
+      <Get Name="Get" Id="{b0c904f5-fe06-4484-845d-0ce3e10cc3f7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Activated := bActivated;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{939fe8cd-62b3-40d3-bf60-5f2504838f18}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bActivated := Activated;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Assign" Id="{9bb5c29b-9d76-4d01-97cf-5478495eb455}">
+      <Declaration><![CDATA[METHOD Assign : PVOID
+VAR_INPUT
+	ImportLocation			: REAL;
+	ExportLocation			: REAL;
+	UnitType				: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bBusy AND bActivated THEN
+	bBusy := TRUE;
+	rImportX := ImportLocation;
+	rExportX := ExportLocation;
+	iType := UnitType;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Busy" Id="{8c5ac7e7-f0c0-4896-b082-5b2313de9b57}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL]]></Declaration>
+      <Get Name="Get" Id="{68774231-fe23-406b-bd03-1efb75470149}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="CurUnit" Id="{1899013a-b7fc-4670-aff4-000bfd1ad739}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY CurUnit : ST_Unit]]></Declaration>
+      <Get Name="Get" Id="{c5762c6d-71ea-472b-9f5e-1e86bf3f481b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[CurUnit := stUnit;
+stUnit.eType := -1;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{30092054-f23c-456f-9e34-f94309ebb517}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IF CurUnit.eType <> -1 THEN
+	stUnit := CurUnit;
+END_IF
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="CurX" Id="{d472d742-8be1-43bd-813c-52ab9aa89f69}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY CurX : REAL]]></Declaration>
+      <Get Name="Get" Id="{ad840bed-414e-4564-8b17-16b99a530ca0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[CurX := rCurX;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{19af05a2-01e6-41b0-a3f4-323a1f0e6444}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[rCurX := CurX;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="CurY" Id="{03d3888b-82e5-4e76-85ce-b464b921a7a4}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY CurY : REAL]]></Declaration>
+      <Get Name="Get" Id="{bdfea8e1-9a3c-4656-a882-a51b3e90b23d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[CurY := rCurY;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{8cae0b24-30f7-4439-a422-c3b8936e8664}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[rCurY := CurY;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Load" Id="{8fc9fcc9-9d21-4577-8b11-ab846c03ffec}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Load : BOOL]]></Declaration>
+      <Get Name="Get" Id="{c558f3cc-da82-45cb-96ba-d8cece26a63f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Load := bLoad;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{1435226d-2278-4a45-81e8-550a8aeff9ba}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bLoad := Load;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Run" Id="{dbae01e7-931c-4469-a7fb-490b8d311ea3}">
+      <Declaration><![CDATA[METHOD Run : PVOID
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bBusy THEN
+	iCase := 0;
+END_IF
+IF bBusy AND NOT bRunning THEN
+	bRunning := TRUE;
+	iCase := 1;
+END_IF
+
+CASE iCase OF
+	0:	(*Idle*)
+		IF rCurY < rIdleY THEN
+			rCurY := rCurY + 1;
+		ELSIF
+			rCurY > rIdleY THEN
+			rCurY := rCurY - 1;
+		ELSE
+			IF rCurX < rIdleX THEN
+				rCurX := rCurX + 1;
+			ELSIF 
+				rCurX > rIdleX THEN
+				rCurX := rCurX - 1;
+			END_IF
+		END_IF
+		
+	1:	(*Go Import Location*)
+		IF rCurY < rIdleY THEN
+			rCurY := rCurY + 1;
+		ELSIF
+			rCurY > rIdleY THEN
+			rCurY := rCurY - 1;
+		ELSE
+			IF rCurX < rImportX THEN
+				rCurX := rCurX + 1;
+			ELSIF
+				rCurX > rImportX THEN
+				rCurX := rCurX - 1;
+			ELSE
+				iCase := 11;
+			END_IF
+		END_IF
+		
+	11:	(*Go to Loading Position*)
+		IF rCurY < rLoadingY THEN
+			rCurY := rCurY + 1;
+		ELSIF 
+			rCurY > rLoadingY THEN
+			rCurY := rCurY - 1;
+		ELSE
+			bLoad := TRUE;
+			iCase := 2;
+		END_IF
+	
+	2:	(*Load*)
+		IF NOT bLoad THEN
+			iCase := 3;
+		END_IF
+		
+	21:	(*Leave Loading Position*)
+		IF rCurY < rIdleY THEN
+			rCurY := rCurY + 1;
+		ELSIF
+			rCurY > rIdleY THEN
+			rCurY := rCurY - 1;
+		ELSE
+			iCase := 3;
+		END_IF
+	
+	3:	(*Go to Export Location*)
+		IF rCurX < rExportX THEN
+			rCurX := rCurX + 1;
+		ELSIF
+			rCurX > rExportX THEN
+			rCurX := rCurX - 1;
+		ELSE
+			IF rCurY < rLoadingY THEN
+				rCurY := rCurY + 1;
+			ELSIF 
+				rCurY > rLoadingY THEN
+				rCurY := rCurY - 1;
+			ELSE
+				bUnload := TRUE;
+				iCase := 4;
+			END_IF
+		END_IF
+		
+	4:	(*Unload*)
+		IF NOT bUnload THEN
+			iCase := 0;
+			bBusy := FALSE;
+			bRunning := FALSE;
+		END_IF
+	
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="UnitType" Id="{b77ae1b4-93f7-4341-adb3-d352fd9e7bd0}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY UnitType : INT]]></Declaration>
+      <Get Name="Get" Id="{fabec5dd-a5f6-408c-bef5-b9fe95971027}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[UnitType := iType;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Unload" Id="{11071653-373e-41a3-8cbb-ac2a93b8c962}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Unload : BOOL]]></Declaration>
+      <Get Name="Get" Id="{4af0a6a7-95d3-433d-8b2e-58bc42e700c8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Unload := bUnload;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{e78288a0-5f10-4323-afde-a4919b0e56f4}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bUnload := Unload;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="FB_Arm">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Activated.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Activated.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Assign">
+      <LineId Id="15" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Busy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurUnit.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurUnit.Set">
+      <LineId Id="5" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurX.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurX.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurY.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.CurY.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Load.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Load.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Run">
+      <LineId Id="163" Count="2" />
+      <LineId Id="5" Count="1" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="33" Count="3" />
+      <LineId Id="38" Count="4" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="130" Count="5" />
+      <LineId Id="143" Count="5" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="166" Count="0" />
+      <LineId Id="169" Count="7" />
+      <LineId Id="167" Count="1" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="158" Count="2" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="180" Count="5" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="178" Count="1" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="94" Count="14" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="44" Count="1" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="202" Count="1" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="15" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.UnitType.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Unload.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Arm.Unload.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

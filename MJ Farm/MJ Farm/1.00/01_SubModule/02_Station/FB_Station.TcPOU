@@ -1,0 +1,371 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Station" Id="{fa9608f7-10b1-49a0-93c0-54a46514fd0d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Station
+VAR
+	stUnitArr			: ARRAY [1..100] OF ST_Unit;
+	iMaxUnit			: INT;
+	iLastIndex			: INT;
+	
+	iMaxLevel			: INT;
+	iCurLevel			: INT := 1;
+	
+	rLocation			: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="Properties" Id="{cbf9eb36-f301-4eff-929e-8c86fc0f2250}" />
+    <Property Name="HasChicken" Id="{c93ed1ef-3654-47cb-aa24-135c3c4f942d}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY HasChicken : BOOL]]></Declaration>
+      <Get Name="Get" Id="{4be2f8ba-4fa3-450c-b7ac-7bbba6d7084e}">
+        <Declaration><![CDATA[VAR
+	iIndex			: INT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[HasChicken := FALSE;
+IF iLastIndex > 0 THEN
+	FOR iIndex := 1 TO iLastIndex BY 1 DO
+		IF stUnitArr[iIndex].eType = 1 THEN
+			HasChicken := NOT HasChicken;
+			RETURN;
+		END_IF
+	END_FOR
+END_IF
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HasEgg" Id="{b140493c-7e54-4932-a2b3-a290ab1e592b}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY HasEgg : BOOL]]></Declaration>
+      <Get Name="Get" Id="{64f83d36-90c4-4942-aa6c-681bd7c09926}">
+        <Declaration><![CDATA[VAR
+	iIndex			: INT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[HasEgg := FALSE;
+IF iLastIndex > 0 THEN
+	FOR iIndex := 1 TO iLastIndex BY 1 DO
+		IF stUnitArr[iIndex].eType = 0 THEN
+			HasEgg := NOT HasEgg;
+			RETURN;
+		END_IF
+	END_FOR
+END_IF
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="HpDeduct" Id="{85e37be9-392a-462c-bf3b-e2daa26ec517}">
+      <Declaration><![CDATA[METHOD HpDeduct : PVOID
+VAR
+	iTempIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iLastIndex < 1 THEN
+	RETURN;
+END_IF
+
+FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+	stUnitArr[iTempIndex].iHitPoint := stUnitArr[iTempIndex].iHitPoint - 1;
+	IF stUnitArr[iTempIndex].iHitPoint = 0 THEN
+		RemoveUnit(iTempIndex);
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="HpRecover" Id="{f06cad78-0f1e-4abe-978b-f240cdfab569}">
+      <Declaration><![CDATA[METHOD HpRecover : PVOID
+VAR
+	iTempIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iLastIndex < 1 THEN
+	RETURN;
+END_IF
+
+FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+	IF stUnitArr[iTempIndex].iHitPoint < 30 THEN
+		stUnitArr[iTempIndex].iHitPoint := stUnitArr[iTempIndex].iHitPoint + 1;
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="IsFull" Id="{e7fe457d-fa78-4d80-91a3-3ca9cd53af44}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY IsFull : BOOL]]></Declaration>
+      <Get Name="Get" Id="{ff251fa9-273a-4834-ba24-a217c2905242}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IsFull := TRUE;
+IF iLastIndex < iMaxUnit THEN
+	IsFull := NOT IsFull;
+END_IF
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Level" Id="{1e558226-5e6a-4228-836a-c1984b49fda3}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Level : INT]]></Declaration>
+      <Get Name="Get" Id="{40b1a418-8c16-4d1f-b09c-d9dcb7205473}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Level := iCurLevel;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Location" Id="{dfc70d4f-c752-4532-9b94-56931eabe2a5}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Location : REAL]]></Declaration>
+      <Get Name="Get" Id="{251ac9ff-8af7-4cf7-81c5-5f8d0b1a6186}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Location := rLocation;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="RemoveUnit" Id="{0dc9de5b-c854-46f7-baa7-f6cad565c0e8}">
+      <Declaration><![CDATA[METHOD RemoveUnit : PVOID
+VAR_INPUT
+	iIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stUnitArr[iIndex] := stUnitArr[iLastIndex];
+stUnitArr[iLastIndex].eType := -1;
+stUnitArr[iLastIndex].iHitPoint := 0;
+stUnitArr[iLastIndex].iProgress := 0;
+iLastIndex := iLastIndex - 1;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Run" Id="{29adece8-1a8b-4c56-8ca4-ad76a7e2a383}">
+      <Declaration><![CDATA[METHOD Run : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[iMaxUnit := iCurLevel * 10;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Set" Id="{859eb24e-bd03-4a04-b53f-b0941150ff0c}">
+      <Declaration><![CDATA[METHOD Set : PVOID
+VAR_INPUT
+	MaxLevel			: INT;
+	Location			: REAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[iMaxLevel := MaxLevel;
+rLocation := Location;
+iCurLevel := 1;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SortAscending" Id="{81cc50fa-f286-4208-a120-5248de96850f}">
+      <Declaration><![CDATA[METHOD SortAscending : PVOID
+VAR
+	iCurIndex			: INT;
+	stTempUnit			: ST_Unit;
+	iTempIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iLastIndex < 2 THEN
+	RETURN;
+END_IF
+
+FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+	FOR iCurIndex := 1 TO iLastIndex BY 1 DO
+		IF stUnitArr[iCurIndex].iHitPoint > stUnitArr[iTempIndex].iHitPoint THEN
+			stTempUnit := stUnitArr[iCurIndex];
+			stUnitArr[iCurIndex] := stUnitArr[iTempIndex];
+			stUnitArr[iTempIndex] := stTempUnit;
+		END_IF
+	END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SortDescending" Id="{4d2ef8e1-06aa-40b5-8dcb-502a6dcf2298}">
+      <Declaration><![CDATA[METHOD SortDescending : PVOID
+VAR
+	iCurIndex			: INT;
+	stTempUnit			: ST_Unit;
+	iTempIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iLastIndex < 2 THEN
+	RETURN;
+END_IF
+
+FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+	FOR iCurIndex := 1 TO iLastIndex BY 1 DO
+		IF stUnitArr[iCurIndex].iHitPoint < stUnitArr[iTempIndex].iHitPoint THEN
+			stTempUnit := stUnitArr[iCurIndex];
+			stUnitArr[iCurIndex] := stUnitArr[iTempIndex];
+			stUnitArr[iTempIndex] := stTempUnit;
+		END_IF
+	END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="TotalUnit" Id="{2c8335a1-57c5-4d23-9140-156d3c02720b}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY TotalUnit : INT]]></Declaration>
+      <Get Name="Get" Id="{b7c489f8-94b4-4068-aeaa-0dc12d125db8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TotalUnit := iLastIndex;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="UnitExport" Id="{ab8aafad-4c05-4c03-91cb-69140f668fcd}">
+      <Declaration><![CDATA[METHOD UnitExport : ST_Unit
+VAR_INPUT
+	UnitType			: INT; // 0: Egg, 1: Chicken
+END_VAR
+VAR
+	iTempIndex			: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iLastIndex < 1 THEN
+	RETURN;
+END_IF
+
+CASE UnitType OF
+	0: 
+		FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+			IF stUnitArr[iTempIndex].eType = UnitType THEN
+				stUnitArr[iTempIndex].iProgress := 0;
+				UnitExport := stUnitArr[iTempIndex];
+				stUnitArr[iTempIndex] := stUnitArr[iLastIndex];
+				stUnitArr[iLastIndex].eType := -1;
+				stUnitArr[iLastIndex].iHitPoint := 0;
+				iLastIndex := iLastIndex - 1;
+				RETURN;
+			END_IF
+		END_FOR
+		
+	1:
+		FOR iTempIndex := 1 TO iLastIndex BY 1 DO
+			IF stUnitArr[iTempIndex].eType = UnitType THEN
+				stUnitArr[iTempIndex].iProgress := 0;
+				UnitExport := stUnitArr[iTempIndex];
+				stUnitArr[iTempIndex] := stUnitArr[iLastIndex];
+				stUnitArr[iLastIndex].eType := -1;
+				stUnitArr[iLastIndex].iHitPoint := 0;
+				iLastIndex := iLastIndex - 1;
+				RETURN;
+			END_IF
+		END_FOR
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UnitImport" Id="{b9b1ce72-efa1-4e57-bb72-c0809f7cfc8a}">
+      <Declaration><![CDATA[METHOD UnitImport : PVOID
+VAR_INPUT
+	Unit			: ST_Unit;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Unit.eType <> -1 THEN
+	IF iLastIndex < iMaxUnit THEN
+		iLastIndex := iLastIndex + 1;
+		stUnitArr[iLastIndex] := Unit;
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Upgrade" Id="{58a8775b-8909-4efa-afa5-d70add47deb0}">
+      <Declaration><![CDATA[METHOD Upgrade : PVOID
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF iCurLevel < iMaxLevel THEN
+	iCurLevel := iCurLevel + 1;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Station">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.HasChicken.Get">
+      <LineId Id="6" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.HasEgg.Get">
+      <LineId Id="6" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.HpDeduct">
+      <LineId Id="6" Count="8" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.HpRecover">
+      <LineId Id="6" Count="7" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.IsFull.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="3" />
+    </LineIds>
+    <LineIds Name="FB_Station.Level.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.Location.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.RemoveUnit">
+      <LineId Id="10" Count="0" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="14" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.Run">
+      <LineId Id="6" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.Set">
+      <LineId Id="5" Count="0" />
+      <LineId Id="16" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_Station.SortAscending">
+      <LineId Id="165" Count="12" />
+      <LineId Id="25" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.SortDescending">
+      <LineId Id="7" Count="12" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.TotalUnit.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.UnitExport">
+      <LineId Id="50" Count="29" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.UnitImport">
+      <LineId Id="7" Count="4" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Station.Upgrade">
+      <LineId Id="6" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
